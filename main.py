@@ -1,4 +1,9 @@
 import praw
+from pkg import lang
+
+# -*- coding: utf-8 -*-
+import sys
+sys.stdout.reconfigure(encoding='utf-8')
 
 reddit = praw.Reddit(
     client_id="o15VigttId3z68mTrV4Jyg",
@@ -31,8 +36,7 @@ for submission in subreddit.top(limit=5):
   for comment in comments:
     body = comment.body
     
-    words = body.split()
-    
+    words = lang.extract_relevant_words(body)
     for word in words:
       word_count[word] = word_count.get(word, 0) + 1
 
