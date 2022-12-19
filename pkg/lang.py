@@ -23,9 +23,8 @@ def extract_relevant_words(comment_body: str) -> list:
     relevant_words = []
     for t in tags:
         if __is_tag_relevant(t):
-            relevant_words.append(t)
+            relevant_words.append(t[0])
 
-    print(f"{relevant_words = }")
     return relevant_words
 
 
