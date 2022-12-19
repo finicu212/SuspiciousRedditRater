@@ -1,29 +1,36 @@
 ## This module is responsible for language processing
 
 import nltk
+import re
 
 '''
-body = "> All I see is some blind hatred and counting all Ukrainians as nazis. \n\nI am sorry facts make you uncomfortable. You can go have a chat with them in the Ukrainian subreddits, lol, see if your opinions persist.\n\n>Since when did people rise by themselves?\n\nUhhh, since forever? Or are you trying to insinuate that the Maidan protests and the captures of city administrations in the West were not an organic grassroots Ukrainian movement?!\n\n>A bunch of miners won't help, separate cases in Ukraine happen now and then, now what? \n\nSo where are they? Don't be shy, I've already asked for evidence above - where are the Ukrainian calls for justice for the murderers in Odessa, for the nazi punitive battalions, for regular attacks against civilian targets the ukkie army still perpetrates regularly? Maybe there is at least a movement for implementing the Minsk Agreements, which would stop the war? \n\n>Stop judging all the people by their criminals.\n\nWhen there is not a voice coming from a country other than these of the criminals - who have the power and thus have appointed themselves not-criminals, to begin with, - it is patently obvious that the silent majority of its population is perfectly fine with what those cannibals are doing."
-relevant_words = [('see', 'VBP'), ('is', 'VBZ'), ('blind', 'NN'), ('counting', 'VBG'), ('nazis', 'NN'), ('am', 'VBP'), ('sorry', 'JJ'), ('facts', 'NNS'), ('make', 'VBP'), ('uncomfortable', 'JJ'), ('go', 'VB'), ('have', 'VB'), ('chat', 'NN'), ('Ukrainian', 'JJ'), ('subreddits', 'NNS'), ('lol', 'NN'), ('see', 'VBP'), ('opinions', 'NNS'), ('persist', 'VBP'), ('people', 'NNS'), ('rise', 'VB'), ('Uhhh', 'NNP'), ('forever', 'RB'), ('are', 'VBP'), ('trying', 'VBG'), ('insinuate', 'VB'), ('Maidan', 'NNP'), ('protests', 'NNS'), ('captures', 'NNS'), ('city', 'NN'), ('administrations', 'NNS'), ('West', 'NNP'), ('not', 'RB'), ('organic', 'JJ'), ('grassroots', 'NNS'), ('Ukrainian', 'JJ'), ('movement', 'NN'), ('A', 'NNP'), ('bunch', 'NN'), ('miners', 'NNS'), ("n't", 'RB'), ('help', 'VB'), ('separate', 'JJ'), ('cases', 'NNS'), ('Ukraine', 'NNP'), ('happen', 'VB'), ('now', 'RB'), ('then', 'RB'), ('now', 'RB'), ('So', 'RB'), ('are', 'VBP'), ('Do', 'VBP'), ("n't", 'RB'), ('be', 'VB'), ('shy', 'JJ'), ("'ve", 'VBP'), ('already', 'RB'), ('evidence', 'NN'), ('are', 'VBP'), ('Ukrainian', 'JJ'), ('calls', 'NNS'), ('justice', 'NN'), ('murderers', 'NNS'), ('Odessa', 'NNP'), ('nazi', 'JJ'), ('punitive', 'JJ'), ('battalions', 'NNS'), ('regular', 'JJ'), ('attacks', 'NNS'), ('civilian', 'JJ'), ('targets', 'NNS'), ('ukkie', 'JJ'), ('army', 'NN'), ('still', 'RB'), ('perpetrates', 'VBZ'), ('regularly', 'RB'), ('Maybe', 'RB'), ('is', 'VBZ'), ('movement', 'NN'), ('implementing', 'VBG'), ('Minsk', 'NNP'), ('Agreements', 'NNP'), ('stop', 'VB'), ('war', 'NN'), ('Stop', 'NNP'), ('judging', 'NN'), ('people', 'NNS'), ('criminals', 'NNS'), ('is', 'VBZ'), ('not', 'RB'), ('voice', 'NN'), ('coming', 'VBG'), ('country', 'NN'), ('other', 'JJ'), ('criminals', 'NNS'), ('have', 'VBP'), ('power', 'NN'), ('thus', 'RB'), ('have', 'VB'), ('not-criminals', 'NNS'), ('begin', 'VB'), ('is', 'VBZ'), ('patently', 'RB'), ('obvious', 'JJ'), ('silent', 'JJ'), ('majority', 'NN'), ('population', 'NN'), ('is', 'VBZ'), ('perfectly', 'RB'), ('fine', 'JJ'), ('cannibals', 'NNS'), ('are', 'VBP'), ('doing', 'VBG')]
+body = 'Nazis, cannibals, knowing child-killers, and scum who make half a hundred civilians being burned alive for their political opinions a point of pride and a national holiday do not deserve respect.'
+relevant_words = [('Nazis', 'NNP'), ('cannibals', 'NNS'), ('knowing', 'VBG'), ('child-killers', 'NNS'), ('scum', 'NN'), ('make', 'VBP'), ('hundred', 'JJ'), ('civilians', 'NNS'), ('being', 'VBG'), ('alive', 'JJ'), ('political', 'JJ'), ('opinions', 'NNS'), ('point', 'NN'), ('pride', 'NN'), ('national', 'JJ'), ('holiday', 'NN'), ('do', 'VBP'), ('not', 'RB'), ('deserve', 'VB'), ('respect', 'NN')]
+
+body = 'Fine then its the liberals ndp conservatives in Canada and democrats and republicans. I chose the Democrats and liberals because they both have known monetary gains to make in the Ukraine if Ukraine opposes Russia.'
+relevant_words = [('Fine', 'NNP'), ('then', 'RB'), ('liberals', 'NNS'), ('ndp', 'VBP'), ('conservatives', 'NNS'), ('Canada', 'NNP'), ('liberals', 'NNS'), ('have', 'VBP'), ('monetary', 'JJ'), ('gains', 'NNS'), ('make', 'VB'), ('Ukraine', 'NNP'), ('Ukraine', 'NNP'), ('opposes', 'VBZ'), ('Russia', 'NNP')]
 '''
 
-
-
+# Use this function outside of the module.
+# Returns a list of relevant words, as marked by __is_tag_relevant function.
 def extract_relevant_words(comment_body: str) -> list:
-    # TODO: Before word_tokenizing, remove all links from the comment.
+    # Before word_tokenizing, remove all links from the comment.
+    comment_body = re.sub(r'(https?:\/\/)(\s)*(www\.)?(\s)*((\w|\s)+\.)*([\w\-\s]+\/)*([\w\-]+)((\?)?[\w\s]*=\s*[\w\%&]*)*', " ", comment_body)
+
     toks = nltk.word_tokenize(comment_body)
     tags = nltk.pos_tag(toks)
 
     relevant_words = []
     for t in tags:
-
+        if __is_tag_relevant(t):
             relevant_words.append(t)
 
     print(f"{relevant_words = }")
     return relevant_words
 
 
-def is_tag_relevant(t: tuple) -> bool:
+# Do not call this function outside of the module.
+def __is_tag_relevant(t: tuple) -> bool:
     whitelisted_tags = ['JJ', 'JJR', 'NN', 'NNS', 'NNP', 'VB', 'VBZ', 'VBP', 'VBG', 'RB']
     blacklisted_words = ['[', ']', '>', '<', '%', r'\\', '\'re', 'n\'t', '\'s', 'are', 'be']
     
