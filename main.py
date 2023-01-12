@@ -2,7 +2,7 @@ import praw
 from pkg import lang
 from better_profanity import profanity
 # from dotenv import load_dotenv
-from prawcore import Redirect, NotFound
+from prawcore import Redirect, NotFound, Forbidden
 import os
 import sys
 
@@ -11,17 +11,22 @@ import sys
 sys.stdout.reconfigure(encoding='utf-8')
 
 def grade_words(words, bad_words):
-    sample = []
     bad_word_count = 0
+    appearances = {}
     for word in words:
         if word in bad_words.keys():
-            if len(sample) < 5:
-              sample.append(word)
-            bad_word_count += 1
+          if word in appearances:
+            appearances[word] += 1
+          else:
+            appearances[word] = 1
+
+          bad_word_count += 1
     if bad_word_count == 0:
         return 0
     else:
-        print('Some of the bad words found in your entered subreddit: ' + str(sample))
+        appearances = sorted(appearances, key=appearances.get, reverse=True)
+        print('Some of the bad words found in your entered subreddit: ' + str(appearances[:10]))
+        print(f"{bad_word_count} / {len(words)}")
         return round(max((10 * (bad_word_count / len(words))), 1), 2)
 
 reddit = praw.Reddit(
@@ -63,9 +68,12 @@ def training(quarantine_sub):
       words = lang.extract_relevant_words(body)
       for word in words:
         word = word.lower()
-        # if not profanity.contains_profanity(word):
-        #   continue
+        if not profanity.contains_profanity(word):
+          continue
         bad_word_count[word] = bad_word_count.get(word, 0) + 1
+
+  appearances = sorted(bad_word_count, key=bad_word_count.get, reverse=True)
+  print('Some of the bad words found in training subreddit: ' + str(appearances[:10]))
 
   return bad_word_count
 
@@ -105,7 +113,7 @@ while not exists:
     inputSubreddit = input('Please enter a subreddit to train on (i.e. russia): ')
     reddit.subreddits.search_by_name(inputSubreddit)
     exists = True
-  except (Redirect, NotFound) as error:
+  except:
     print('You entered an invalid subreddit. Please enter a valid one.')
 
 print('Training grader...')
@@ -122,7 +130,7 @@ while not exists:
     inputSubreddit = input('Please enter a subreddit to rate: ')
     reddit.subreddits.search_by_name(inputSubreddit)
     exists = True
-  except (Redirect, NotFound) as error:
+  except:
     print('You entered an invalid subreddit. Please enter a valid one.')
 
 print()
