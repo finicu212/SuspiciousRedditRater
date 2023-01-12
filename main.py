@@ -1,47 +1,126 @@
 import praw
 from pkg import lang
+from better_profanity import profanity
+from dotenv import load_dotenv
+from prawcore import Redirect, NotFound
+import os
+import sys
 
 # -*- coding: utf-8 -*-
-import sys
+load_dotenv()
 sys.stdout.reconfigure(encoding='utf-8')
 
+def grade_words(words, bad_words):
+    sample = []
+    bad_word_count = 0
+    for word in words:
+        if word in bad_words.keys():
+            if len(sample) < 5:
+              sample.append(word)
+            bad_word_count += 1
+    if bad_word_count == 0:
+        return 0
+    else:
+        print('Some of the bad words found in your entered subreddit: ' + str(sample))
+        return round(max((10 * (bad_word_count / len(words))), 1), 2)
+
 reddit = praw.Reddit(
-    client_id="o15VigttId3z68mTrV4Jyg",
-    client_secret="8W4KVNr7cnBbNatbXvX5aaGowA4B_A",
-    password="notgonnatellu",
-    user_agent="python:com.SuspiciousRater:v0.0.7 (by /u/the-dark-defender)",
-    username="minculeteandrei",
+    client_id = os.getenv('CLIENT_ID'),
+    client_secret = os.getenv('CLIENT_SECRET'),
+    password = os.getenv('PASS'),
+    user_agent = "python:com.SuspiciousRater:v0.0.7 (by /u/the-dark-defender)",
+    username = "minculeteandrei",
 )
-subreddit = reddit.subreddit("russia")
-subreddit.quaran.opt_in()
 
-word_count = {}
-
-for submission in subreddit.top(limit=5):
-  # selftext = the main body of the post
+def getSubmissionTitleSplit(submission):
   title = submission.title
   selftext = submission.selftext
-  
   text = title + ' ' + selftext
-  
-  words = text.split()
-  
-  for word in words:
-    word_count[word] = word_count.get(word, 0) + 1
-  
-  submission.comments.replace_more()
-  print()
-  comments = submission.comments.list()
-  
-  for comment in comments:
-    body = comment.body
     
-    words = lang.extract_relevant_words(body)
+  return text.split()
+
+def training():
+  subreddit = reddit.subreddit("russia")
+  subreddit.quaran.opt_in()
+
+  bad_word_count = {}
+
+  for submission in subreddit.top(limit=15):
+    words = getSubmissionTitleSplit(submission)
+    
     for word in words:
-      word_count[word] = word_count.get(word, 0) + 1
+      word = word.lower()
+      if not profanity.contains_profanity(word):
+        continue
+      bad_word_count[word] = bad_word_count.get(word, 0) + 1
+    
+    submission.comments.replace_more(limit=10)
+    comments = submission.comments.list()
+    
+    for comment in comments:
+      body = comment.body
+      
+      words = lang.extract_relevant_words(body)
+      for word in words:
+        word = word.lower()
+        if not profanity.contains_profanity(word):
+          continue
+        bad_word_count[word] = bad_word_count.get(word, 0) + 1
 
-# Sort the dictionary by value in descending order
-sorted_word_count = sorted(word_count.items(), key=lambda x: x[1], reverse=True)
+  return bad_word_count
 
-for word, count in sorted_word_count[:100]:
-  print(f'{word}: {count}')
+def getInputRedditWords(inputReddit):
+  subreddit = reddit.subreddit(inputReddit)
+
+  word_count = set()
+
+  for submission in subreddit.top(limit=5):
+    words = getSubmissionTitleSplit(submission)
+
+    for word in words:
+      word = word.lower()
+      if not profanity.contains_profanity(word):
+        continue
+      word_count.add(word)
+
+    submission.comments.replace_more(limit=10)
+    comments = submission.comments.list()
+
+    for comment in comments:
+      body = comment.body
+
+      words = lang.extract_relevant_words(body)
+      for word in words:
+        word = word.lower()
+        if not profanity.contains_profanity(word):
+          continue
+        word_count.add(word)
+
+  return list(word_count) 
+
+print('Training grader...')
+print()
+
+bad_word_count = training()
+
+print('Training done!')
+
+exists = False
+
+while not exists:
+  try:
+    inputSubreddit = input('Please enter a subreddit to rate: ')
+    reddit.subreddits.search_by_name(inputSubreddit)
+    exists = True
+  except Redirect or NotFound:
+    print('You entered an invalid subreddit. Please enter a valid one.')
+
+print()
+print('rating your subreddit...')
+
+words = getInputRedditWords(inputSubreddit)
+grade = grade_words(words, bad_word_count)
+
+print()
+print('The entered subreddit has a suspicious score of ' + str(grade) + ' out of 10!')
+
