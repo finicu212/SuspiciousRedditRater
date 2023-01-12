@@ -30,7 +30,8 @@ def extract_relevant_words(comment_body: str) -> list:
 
 # Do not call this function outside of the module.
 def __is_tag_relevant(t: tuple) -> bool:
-    whitelisted_tags = ['JJ', 'JJR', 'NN', 'NNS', 'NNP', 'VB', 'VBZ', 'VBP', 'VBG', 'RB']
+    # whitelisted_tags = ['JJ', 'JJR', 'NN', 'NNS', 'NNP', 'VB', 'VBZ', 'VBP', 'VBG', 'RB']
+    whitelisted_tags = ['NN', 'NNS', 'NNP']
     blacklisted_words = ['[', ']', '>', '<', '%', r'\\', '\'re', 'n\'t', '\'s', 'are', 'be']
     
     # First should add all fail conditions, ordered by most generally inclusive to least inclusive
